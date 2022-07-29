@@ -10,11 +10,32 @@ const resolvers = {
 
     Query: {
         me: async (parent, args, context, info) => {
-            return users.find(user => user.id === args.id || user.username === args.username);
+            let user = await User.findOne({_id : context.user._id});
+            return user
         }
+    },
+
+    Mutation: {
+        addUser: async(parent, args, context, info) => {
+            let createUser = await User.create(args);
+            let token = signToken(createUser);
+            return {token, createUser}
+        },
+        login: async (parent, args, context, info) => {
+            const user = await User.findOne({ $or: [{ username: args.username }, { email: args.email }] });
+            if (!user) {
+            throw new AuthenticationError('There has been an error');
+            }
+
+            const correctPw = await user.isCorrectPassword(args.password);
+
+            if (!correctPw) {
+            throw new AuthenticationError('There has been an error');
+            }
+            const token = signToken(user);
+            return { token, user };
+            }
     }
-
-
 
 
 
