@@ -16,7 +16,7 @@ const resolvers = {
     },
 
     Mutation: {
-        addUser: async(parent, args, context, info) => {
+        addUser: async (parent, args, context, info) => {
             let createUser = await User.create(args);
             let token = signToken(createUser);
             return {token, createUser}
@@ -34,16 +34,33 @@ const resolvers = {
             }
             const token = signToken(user);
             return { token, user };
-            }
+        }
+    },
+
+    saveBook: async (parent, args, context, info) => {   
+        const updatedUser = await User.findOneAndUpdate(
+        { _id: args.user._id },
+        { $addToSet: { savedBooks: args } },
+        { new: true, runValidators: true })
+        
+        if (!updatedUser) {
+            throw new AuthenticationError('There has been an error');
+        }
+        return updatedUser;
+    },
+
+    deleteBook: async (parent, args, context, info) => {
+        const updatedUser = await User.findOneAndUpdate(
+            { _id: args.user._id },
+            { $pull: { savedBooks: { bookId: args.bookId } } },
+            { new: true }
+        );
+        if (!updatedUser) {
+            throw new AuthenticationError('There has been an error');
+        }
+        return updatedUser;
     }
-
-
-
-
-
-
-
-
 };
+
 
 module.exports = resolvers;
